@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monitoring Photovoltaïque – Valeurs à 12h</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 15px;
+      background: #f9f9f9;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+    }
+    h2, h3 {
+      margin-bottom: 20px;
+    }
+    .gauges {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .gauge {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 10px;
+    }
+    .gauge svg {
+      transform: rotate(-135deg);
+      width: 140px;
+      height: 140px;
+    }
+    .gauge circle.bg {
+      fill: none;
+      stroke: #eee;
+      stroke-width: 15;
+    }
+    .gauge circle.fg {
+      fill: none;
+      stroke-width: 15;
+      stroke-linecap: round;
+      stroke: #007bff;
+      stroke-dasharray: 270;
+      stroke-dashoffset: 270;
+      transition: stroke-dashoffset 1s ease;
+    }
+    .gauge .label {
+      position: absolute;
+      width: 100%;
+      top: 55%;
+      left: 0;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      user-select: none;
+    }
+    .gauge .value {
+      font-size: 22px;
+      margin-top: 5px;
+      color: #333;
+    }
+    .gauge .unit {
+      font-size: 14px;
+      color: #666;
+    }
+    #energyChart {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #ccc;
+      margin-bottom: 40px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>🌞 Monitoring Photovoltaïque – Valeurs à 12h</h2>
+
+<div class="gauges">
+  <div class="gauge" id="gaugeTension">
+    <svg viewBox="0 0 100 100">
+      <circle class="bg" cx="50" cy="50" r="43" />
+      <circle class="fg" cx="50" cy="50" r="43" />
+    </svg>
+    <div class="label">Tension<br><span class="value" id="valTension">0</span><span class="unit"> V</span></div>
+  </div>
+  <div class="gauge" id="gaugeCourant">
+    <svg viewBox="0 0 100 100">
+      <circle class="bg" cx="50" cy="50" r="43" />
+      <circle class="fg" cx="50" cy="50" r="43" />
+    </svg>
+    <div class="label">Courant<br><span class="value" id="valCourant">0</span><span class="unit"> A</span></div>
+  </div>
+  <div class="gauge" id="gaugeIrradiance">
+    <svg viewBox="0 0 100 100">
+      <circle class="bg" cx="50" cy="50" r="43" />
+      <circle class="fg" cx="50" cy="50" r="43" />
+    </svg>
+    <div class="label">Irradiance<br><span class="value" id="valIrradiance">0</span><span class="unit"> W/m²</span></div>
+  </div>
+</div> <!-- FIN des gauges -->
+
+<h3>📊 Courbe d'énergie simulée</h3>
+<canvas id="energyChart" width="600" height="300"></canvas>
+
+<script>
+  const MAX_TENSION = 50;
+  const MAX_COURANT = 30;
+  const MAX_IRRADIANCE = 1200;
+
+  function updateGauge(gaugeId, valeur, max, color) {
+    const cercle = document.querySelector(`#${gaugeId} circle.fg`);
+    const valSpan = document.querySelector(`#${gaugeId} .value`);
+    valSpan.textContent = valeur.toFixed(2);
+    cercle.style.stroke = color;
+
+    const rayon = 43;
+    const circonference = 2 * Math.PI * rayon;
+    let pct = valeur / max;
+    if (pct > 1) pct = 1;
+    const dashoffset = circonference * (1 - pct);
+    cercle.style.strokeDashoffset = dashoffset;
+  }
+
+  const ctxEnergy = document.getElementById('energyChart').getContext('2d');
+  const energyChart = new Chart(ctxEnergy, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: "Énergie (kWh)",
+        data: [],
+        borderColor: 'orange',
+        backgroundColor: 'rgba(255,165,0,0.3)',
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Énergie (kWh)" }
+        },
+        x: {
+          title: { display: true, text: "Temps relatif" }
+        }
+      },
+      responsive: false
+    }
+  });
+
+  function update() {
+    // Valeurs à 12h
+    const tension = 40.20;
+    const courant = 13.33;
+    const irradiance = 1000.0;
+    const energieValues = [0.000, 0.139, 0.268, 0.379, 0.464, 0.518, 0.536];
+
+    updateGauge("gaugeTension", tension, MAX_TENSION, "#007bff");
+    updateGauge("gaugeCourant", courant, MAX_COURANT, "#28a745");
+    updateGauge("gaugeIrradiance", irradiance, MAX_IRRADIANCE, "#f4c20d");
+
+    const labels = energieValues.map((_, i) => `T-${energieValues.length - i}`);
+    energyChart.data.labels = labels;
+    energyChart.data.datasets[0].data = energieValues;
+    energyChart.update();
+  }
+
+  update();
+</script>
+
+</body>
+</html>
